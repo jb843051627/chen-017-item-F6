@@ -37,25 +37,72 @@ public class TItemCheckTask implements Serializable {
     @ApiModelProperty(value = "核查派单号")
     private String itemNo;
 
-    /** 该动手那一日的止点时刻 */
+    /** 重派来源旧派单号(撤回重派时旧单留底、新单另起一号) */
+    @TableField("source_no")
+    @ApiModelProperty(value = "重派来源旧派单号")
+    private String sourceNo;
+
+    /** 事项码(由名录条目直带,不另请人抄第二遍) */
+    @TableField("item_code")
+    @ApiModelProperty(value = "事项码")
+    private String itemCode;
+
+    /** 被派的承办部门底册代号(整季空着即此栏为NULL) */
+    @TableField("site_no")
+    @ApiModelProperty(value = "被派的承办部门底册代号")
+    private String siteNo;
+
+    /** 被派的承办部门全称(开单时自底册带过来留底) */
+    @TableField("site_name")
+    @ApiModelProperty(value = "被派的承办部门全称")
+    private String siteName;
+
+    /** 事由归类 1要素同上位名录不合 2承诺时限同实际办件接不平 3挂接口径没对上 */
+    @TableField("reason_type")
+    @ApiModelProperty(value = "事由归类 1要素不合 2时限接不平 3挂接口径未对上")
+    private Integer reasonType;
+
+    /** 该动手那一日的止点时刻(头回定下即钉死,不许往后推来凑数) */
     @TableField("due_at")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @ApiModelProperty(value = "该动手那一日的止点时刻")
     private Date dueAt;
 
-    /** 提前几日开口派单 */
+    /** 提前开口那一刻=止点往前挪amount日(能挪的只有这一栏) */
+    @TableField("open_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "提前开口那一刻")
+    private Date openAt;
+
+    /** 提前几日开口派单(全单唯一可挪的一栏) */
     @TableField("amount")
     @ApiModelProperty(value = "提前几日开口派单")
     private BigDecimal amount;
 
-    /** 事由与被派部门记要 */
+    /** 事由与办法记要(照名录口径写) */
     @TableField("content")
-    @ApiModelProperty(value = "事由与被派部门记要")
+    @ApiModelProperty(value = "事由与办法记要")
     private String content;
 
-    /** 条目情形 0未开口 1已派出 2办不成 */
+    /** 实际派出所属轮次号(同一回执行共用一笔) */
+    @TableField("round_no")
+    @ApiModelProperty(value = "实际派出所属轮次号")
+    private String roundNo;
+
+    /** 派出那一刻钉住的时刻(派成第二笔,落定后不许被后来盖掉) */
+    @TableField("dispatch_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "派出那一刻钉住的时刻")
+    private Date dispatchAt;
+
+    /** 派不成缘故(部门撤并/承办栏整季空着/过期撤回等,随这行落着) */
+    @TableField("fail_reason")
+    @ApiModelProperty(value = "派不成缘故")
+    private String failReason;
+
+    /** 条目情形 0候派 1已派出 2派不成 */
     @TableField("status")
-    @ApiModelProperty(value = "条目情形 0未开口 1已派出 2办不成")
+    @ApiModelProperty(value = "条目情形 0候派 1已派出 2派不成")
     private Integer status;
 
     /** 删除标记 0正常 1删除 */
@@ -106,12 +153,60 @@ public class TItemCheckTask implements Serializable {
         this.itemNo = itemNo;
     }
 
+    public String getSourceNo() {
+        return sourceNo;
+    }
+
+    public void setSourceNo(String sourceNo) {
+        this.sourceNo = sourceNo;
+    }
+
+    public String getItemCode() {
+        return itemCode;
+    }
+
+    public void setItemCode(String itemCode) {
+        this.itemCode = itemCode;
+    }
+
+    public String getSiteNo() {
+        return siteNo;
+    }
+
+    public void setSiteNo(String siteNo) {
+        this.siteNo = siteNo;
+    }
+
+    public String getSiteName() {
+        return siteName;
+    }
+
+    public void setSiteName(String siteName) {
+        this.siteName = siteName;
+    }
+
+    public Integer getReasonType() {
+        return reasonType;
+    }
+
+    public void setReasonType(Integer reasonType) {
+        this.reasonType = reasonType;
+    }
+
     public Date getDueAt() {
         return dueAt;
     }
 
     public void setDueAt(Date dueAt) {
         this.dueAt = dueAt;
+    }
+
+    public Date getOpenAt() {
+        return openAt;
+    }
+
+    public void setOpenAt(Date openAt) {
+        this.openAt = openAt;
     }
 
     public BigDecimal getAmount() {
@@ -128,6 +223,30 @@ public class TItemCheckTask implements Serializable {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getRoundNo() {
+        return roundNo;
+    }
+
+    public void setRoundNo(String roundNo) {
+        this.roundNo = roundNo;
+    }
+
+    public Date getDispatchAt() {
+        return dispatchAt;
+    }
+
+    public void setDispatchAt(Date dispatchAt) {
+        this.dispatchAt = dispatchAt;
+    }
+
+    public String getFailReason() {
+        return failReason;
+    }
+
+    public void setFailReason(String failReason) {
+        this.failReason = failReason;
     }
 
     public Integer getStatus() {

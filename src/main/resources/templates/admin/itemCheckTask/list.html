@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.pollix.at/thymeleaf/shiro">
+<head>
+    <th:block th:include="include :: header('要素定期核查派单台账')"/>
+    <style>
+        .round-stat {border-radius:6px;padding:14px 20px;margin-right:14px;color:#fff;display:inline-block;min-width:150px;}
+        .round-stat .num {font-size:26px;font-weight:600;}
+        .round-stat .lbl {font-size:13px;opacity:.9;}
+        .stat-wait {background-color:#5a8dee;}
+        .stat-done {background-color:#36b37e;}
+        .stat-fail {background-color:#ff9f43;}
+        #roundMessage {margin-left:10px;color:#666;font-size:14px;}
+    </style>
+</head>
+<body class="pear-container">
+<div class="layui-card">
+    <div class="layui-card-body">
+        <!-- 本轮局面：三笔只来自服务层这一回执行的回执，页面不算数、不增减 -->
+        <span class="round-stat stat-wait"><span class="num" id="cnt-wait">--</span> <span class="lbl">本轮候派</span></span>
+        <span class="round-stat stat-done"><span class="num" id="cnt-done">--</span> <span class="lbl">本轮已派出</span></span>
+        <span class="round-stat stat-fail"><span class="num" id="cnt-fail">--</span> <span class="lbl">本轮派不成</span></span>
+        <span id="roundMessage">点“跑一轮”后，由服务层这一回执行报数。</span>
+    </div>
+</div>
+<div class="layui-card">
+    <div class="layui-card-body">
+        <form class="layui-form" action="">
+            <div class="layui-form-item">
+                <label class="layui-form-label">事项码</label>
+                <div class="layui-input-inline">
+                    <input type="text" name="itemCode" placeholder="" class="layui-input">
+                </div>
+                <label class="layui-form-label">情形</label>
+                <div class="layui-input-inline">
+                    <select name="status" class="layui-input">
+                        <option value="">全部</option>
+                        <option value="0">候派</option>
+                        <option value="1">已派出</option>
+                        <option value="2">派不成</option>
+                    </select>
+                </div>
+                <button class="pear-btn pear-btn-md pear-btn-primary" lay-submit lay-filter="task-query">
+                    <i class="layui-icon layui-icon-search"></i> 查询
+                </button>
+                <button type="reset" class="pear-btn pear-btn-md">
+                    <i class="layui-icon layui-icon-refresh"></i> 重置
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="layui-card">
+    <div class="layui-card-body">
+        <table id="check-task-table" lay-filter="check-task-table"></table>
+    </div>
+</div>
+</body>
+
+<script type="text/html" id="task-toolbar">
+    <button shiro:hasPermission="item:itemCheckTask:run" class="pear-btn pear-btn-primary pear-btn-md" lay-event="generate">
+        <i class="layui-icon layui-icon-add-1"></i> 名录一键开单
+    </button>
+    <button shiro:hasPermission="item:itemCheckTask:run" class="pear-btn pear-btn-warming pear-btn-md" lay-event="runRound">
+        <i class="layui-icon layui-icon-refresh-3"></i> 跑一轮
+    </button>
+</script>
+
+<script type="text/html" id="task-bar">
+    <button shiro:hasPermission="item:itemCheckTask:run" class="pear-btn pear-btn-danger pear-btn-sm" lay-event="reissue">
+        <i class="layui-icon layui-icon-refresh-1"></i> 撤回重派
+    </button>
+</script>
+
+<script type="text/html" id="task-status-tpl">
+    {{# if(d.status==1){ }}<span class="layui-badge layui-bg-green">已派出</span>
+    {{# } else if(d.status==2){ }}<span class="layui-badge layui-bg-orange">派不成</span>
+    {{# } else { }}<span class="layui-badge layui-bg-blue">候派</span>{{# } }}
+</script>
+
+<th:block th:include="include :: footer"/>
+<script>
+    layui.use(['table', 'form', 'jquery', 'layer'], function () {
+        let table = layui.table;
+        let form = layui.form;
+        let $ = layui.jquery;
+        let layer = layui.layer;
+
+        let MODULE_PATH = rootPath + "/itemCheckTask/";
+        let cols = [[
+            {title: 'ID', field: 'id', align: 'center', hide: true},
+            {title: '派单号', field: 'itemNo', align: 'center', width: 170},
+            {title: '来源旧单号', field: 'sourceNo', align: 'center', width: 170},
+            {title: '事项码', field: 'itemCode', align: 'center', width: 130},
+            {title: '承办部门', field: 'siteName', align: 'center', minWidth: 160,
+                templet: function (d) { return d.siteName ? d.siteName : (d.siteNo ? d.siteNo : '<span style="color:#ff9f43">承办栏空着</span>'); }},
+            {title: '事由归类', field: 'reasonType', align: 'center', width: 150,
+                templet: function (d) { return ['', '要素同上位名录不合', '承诺时限同实际办件接不平', '挂接口径没对上'][d.reasonType] || ''; }},
+            {title: '该动手那一日(止点)', field: 'dueAt', align: 'center', width: 170},
+            {title: '提前几日开口', field: 'amount', align: 'center', width: 110},
+            {title: '派出时刻', field: 'dispatchAt', align: 'center', width: 170},
+            {title: '情形', field: 'status', align: 'center', width: 90, templet: '#task-status-tpl'},
+            {title: '派不成缘故', field: 'failReason', align: 'center', minWidth: 180},
+            {title: '操作', toolbar: '#task-bar', align: 'center', width: 110}
+        ]];
+
+        table.render({
+            elem: '#check-task-table',
+            url: MODULE_PATH + 'list',
+            page: true,
+            method: 'get',
+            cols: cols,
+            skin: 'line',
+            toolbar: '#task-toolbar',
+            defaultToolbar: ['refresh', 'filter', 'print', 'exports']
+        });
+
+        form.on('submit(task-query)', function (data) {
+            table.reload('check-task-table', {where: data.field, page: {curr: 1}});
+            return false;
+        });
+
+        function paint(result) {
+            $('#cnt-wait').text(result.waitingCount);
+            $('#cnt-done').text(result.dispatchedCount);
+            $('#cnt-fail').text(result.failedCount);
+            $('#roundMessage').text(result.message
+                + (result.windowOpen ? '' : '（当前非开口时段，只压着）')
+                + (result.duplicateHeld ? '；岁末同日重复不入账' + result.duplicateHeld + '条' : ''));
+        }
+
+        table.on('toolbar(check-task-table)', function (obj) {
+            if (obj.event === 'generate') {
+                $.post(MODULE_PATH + 'generate', {}, function (res) {
+                    layer.msg(res.msg || '开单完成', {icon: res.code === 200 ? 1 : 2});
+                    table.reload('check-task-table');
+                });
+            } else if (obj.event === 'runRound') {
+                $.post(MODULE_PATH + 'runRound', {}, function (res) {
+                    layer.msg(res.msg || '本轮跑完', {icon: res.code === 200 ? 1 : 2});
+                    // 三笔只认这一回回执；页面不加不减
+                    if (res.data) { paint(res.data); }
+                    table.reload('check-task-table');
+                });
+            }
+        });
+
+        table.on('tool(check-task-table)', function (obj) {
+            if (obj.event === 'reissue') {
+                layer.confirm('撤回此单并重派？旧单留底、新单另起一号，该动手那一日不后挪。', function (index) {
+                    $.post(MODULE_PATH + 'reissue', {id: obj.data.id}, function (res) {
+                        layer.msg(res.msg || '撤回重派完成', {icon: res.code === 200 ? 1 : 2});
+                        table.reload('check-task-table');
+                    });
+                    layer.close(index);
+                });
+            }
+        });
+    });
+</script>
+</html>

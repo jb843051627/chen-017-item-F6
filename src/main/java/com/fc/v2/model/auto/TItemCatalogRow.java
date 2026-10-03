@@ -47,6 +47,27 @@ public class TItemCatalogRow implements Serializable {
     @ApiModelProperty(value = "被挑出的前置项代号")
     private String itemCode;
 
+    /** 承办部门底册代号(整季空着即此栏为NULL,派单照直带过去) */
+    @TableField("site_no")
+    @ApiModelProperty(value = "承办部门底册代号")
+    private String siteNo;
+
+    /** 该轮核哪一桩 1要素同上位名录不合 2承诺时限同实际办件接不平 3挂接口径没对上 */
+    @TableField("reason_type")
+    @ApiModelProperty(value = "该轮核哪一桩 1要素不合 2时限接不平 3挂接口径未对上")
+    private Integer reasonType;
+
+    /** 该动手那一日的止点时刻(派单照直带过去,不许后挪) */
+    @TableField("due_at")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @ApiModelProperty(value = "该动手那一日的止点时刻")
+    private Date dueAt;
+
+    /** 提前几日开口(派单照直带过去,唯一可挪的一栏) */
+    @TableField("amount")
+    @ApiModelProperty(value = "提前几日开口")
+    private BigDecimal amount;
+
     /** 本行待核要素项数 */
     @TableField("qty")
     @ApiModelProperty(value = "本行待核要素项数")
@@ -119,6 +140,38 @@ public class TItemCatalogRow implements Serializable {
 
     public void setItemCode(String itemCode) {
         this.itemCode = itemCode;
+    }
+
+    public String getSiteNo() {
+        return siteNo;
+    }
+
+    public void setSiteNo(String siteNo) {
+        this.siteNo = siteNo;
+    }
+
+    public Integer getReasonType() {
+        return reasonType;
+    }
+
+    public void setReasonType(Integer reasonType) {
+        this.reasonType = reasonType;
+    }
+
+    public Date getDueAt() {
+        return dueAt;
+    }
+
+    public void setDueAt(Date dueAt) {
+        this.dueAt = dueAt;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 
     public BigDecimal getQty() {
